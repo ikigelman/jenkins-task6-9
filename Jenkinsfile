@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    options {
+        skipDefaultCheckout(true)
+    }
+
     environment {
         IMAGE_NAME = 'iritkigelman/flask-hello'
     }
@@ -30,12 +34,23 @@ pipeline {
                 )]) {
                     sh '''
                         set +x
-                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        printf '%s' "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
                         docker push ${IMAGE_NAME}:latest
                         docker push ${IMAGE_NAME}:${BUILD_NUMBER}
                         docker logout
                     '''
                 }
+            }
+        }
+
+        stage('Docker Run') {
+            steps {
+                sh '''
+                    docker pull ${IMAGE_NAME}:latest
+                    docker rm -f flask-hello-app >/dev/null 2>&1 || true
+                    docker run -d --name flask-hello-app -p 5001:5000 ${IMAGE_NAME}:latest
+                    docker ps --filter name=flask-hello-app
+                '''
             }
         }
     }
