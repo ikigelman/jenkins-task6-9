@@ -1,8 +1,29 @@
+
 pipeline {
     agent any
 
     options {
         skipDefaultCheckout(true)
+    }
+
+    parameters {
+        string(
+            name: 'NAME',
+            defaultValue: 'Daniel',
+            description: 'Enter your name'
+        )
+
+        choice(
+            name: 'ENVIRONMENT',
+            choices: ['dev', 'stage', 'prod'],
+            description: 'Select an environment'
+        )
+
+        booleanParam(
+            name: 'RUN_TESTS',
+            defaultValue: true,
+            description: 'Run tests?'
+        )
     }
 
     environment {
@@ -51,6 +72,27 @@ pipeline {
                     docker run -d --name flask-hello-app -p 5001:5000 ${IMAGE_NAME}:latest
                     docker ps --filter name=flask-hello-app
                 '''
+            }
+        }
+
+        stage('Print Name') {
+            steps {
+                echo "Hello ${params.NAME}!"
+            }
+        }
+
+        stage('Print Environment') {
+            steps {
+                echo "Selected environment: ${params.ENVIRONMENT}"
+            }
+        }
+
+        stage('Tests') {
+            when {
+                expression { return params.RUN_TESTS }
+            }
+            steps {
+                echo 'Running tests...'
             }
         }
     }
